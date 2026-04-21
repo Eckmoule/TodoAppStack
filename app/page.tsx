@@ -8,6 +8,7 @@ interface Todo {
   id: string
   user_id: string
   titre: string
+  description : string | null 
   termine: boolean
   created_at: string
 }
@@ -16,6 +17,7 @@ export default function Home() {
   const router = useRouter()
   const [todos, setTodos] = useState<Todo[]>([])
   const [titre, setTitre] = useState('')
+  const [description, setDescription] = useState('')
   const [user, setUser] = useState<any>(null)
   const [error, setError] = useState('')
 
@@ -45,9 +47,10 @@ export default function Home() {
     setError('')
     const { error } = await supabase
       .from('todos')
-      .insert({ titre, user_id: user.id })
+      .insert({ titre, description, user_id: user.id })
     if (error) { setError(error.message); return }
     setTitre('')
+    setDescription('')
     fetchTodos()
   }
 
@@ -103,6 +106,13 @@ export default function Home() {
           placeholder="Nouvelle tâche..."
           className="flex-1 border rounded px-3 py-2"
         />
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Description (optionnelle)..."
+          className="w-full border rounded px-3 py-2"
+          rows={2}
+        />
         <button
           onClick={ajouterTodo}
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
@@ -123,6 +133,9 @@ export default function Home() {
             />
             <span className={`flex-1 ${todo.termine ? 'line-through text-gray-400' : ''}`}>
               {todo.titre}
+              {todo.description && (
+                <span className="block text-sm text-gray-400">{todo.description}</span>
+              )}
             </span>
             <button
               onClick={() => supprimerTodo(todo.id)}
