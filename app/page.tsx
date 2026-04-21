@@ -8,7 +8,7 @@ export default function Home() {
   const router = useRouter()
   const [todos, setTodos] = useState([])
   const [titre, setTitre] = useState('')
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<any>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
