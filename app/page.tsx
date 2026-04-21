@@ -3,73 +3,62 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import supabase from '@/lib/supabase'
-
-interface Todo {
-  id: string
-  user_id: string
-  titre: string
-  description : string | null 
-  termine: boolean
-  created_at: string
-}
+import { fetchTodos, ajouterTodo, toggleTodo, supprimerTodo } from '@/lib/todos'
+import { Todo } from '@/types'
+import TodoForm from '@/components/TodoForm'
+import TodoList from '@/components/TodoList'
 
 export default function Home() {
   const router = useRouter()
   const [todos, setTodos] = useState<Todo[]>([])
-  const [titre, setTitre] = useState('')
-  const [description, setDescription] = useState('')
   const [user, setUser] = useState<any>(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    // Vérifie si l'utilisateur est connecté
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) {
         router.push('/login')
       } else {
         setUser(user)
-        fetchTodos()
+        chargerTodos()
       }
     })
   }, [])
 
-  async function fetchTodos() {
-    const { data, error } = await supabase
-      .from('todos')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (error) { setError(error.message); return }
-    setTodos(data || [])
+  async function chargerTodos() {
+    try {
+      const data = await fetchTodos()
+      setTodos(data)
+    } catch (e: any) {
+      setError(e.message)
+    }
   }
 
-  async function ajouterTodo() {
-    if (!titre.trim()) return
-    setError('')
-    const { error } = await supabase
-      .from('todos')
-      .insert({ titre, description, user_id: user.id })
-    if (error) { setError(error.message); return }
-    setTitre('')
-    setDescription('')
-    fetchTodos()
+  async function handleAjouter(titre: string, description: string) {
+    try {
+      await ajouterTodo(titre, description, user.id)
+      await chargerTodos()
+    } catch (e: any) {
+      setError(e.message)
+    }
   }
 
-  async function toggleTodo(id: string, termine: boolean) {
-    const { error } = await supabase
-      .from('todos')
-      .update({ termine: !termine })
-      .eq('id', id)
-    if (error) { setError(error.message); return }
-    fetchTodos()
+  async function handleToggle(id: string, termine: boolean) {
+    try {
+      await toggleTodo(id, termine)
+      await chargerTodos()
+    } catch (e: any) {
+      setError(e.message)
+    }
   }
 
-  async function supprimerTodo(id: string) {
-    const { error } = await supabase
-      .from('todos')
-      .delete()
-      .eq('id', id)
-    if (error) { setError(error.message); return }
-    fetchTodos()
+  async function handleSupprimer(id: string) {
+    try {
+      await supprimerTodo(id)
+      await chargerTodos()
+    } catch (e: any) {
+      setError(e.message)
+    }
   }
 
   async function deconnexion() {
@@ -96,60 +85,12 @@ export default function Home() {
         <p className="text-red-500 text-sm mb-4">{error}</p>
       )}
 
-      {/* Formulaire ajout */}
-      <div className="flex gap-2 mb-8">
-        <input
-          type="text"
-          value={titre}
-          onChange={(e) => setTitre(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && ajouterTodo()}
-          placeholder="Nouvelle tâche..."
-          className="flex-1 border rounded px-3 py-2"
-        />
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description (optionnelle)..."
-          className="w-full border rounded px-3 py-2"
-          rows={2}
-        />
-        <button
-          onClick={ajouterTodo}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Ajouter
-        </button>
-      </div>
-
-      {/* Liste des todos */}
-      <ul className="space-y-2">
-        {todos.map((todo: Todo) => (
-          <li key={todo.id} className="flex items-center gap-3 p-3 border rounded">
-            <input
-              type="checkbox"
-              checked={todo.termine}
-              onChange={() => toggleTodo(todo.id, todo.termine)}
-              className="w-5 h-5 cursor-pointer"
-            />
-            <span className={`flex-1 ${todo.termine ? 'line-through text-gray-400' : ''}`}>
-              {todo.titre}
-              {todo.description && (
-                <span className="block text-sm text-gray-400">{todo.description}</span>
-              )}
-            </span>
-            <button
-              onClick={() => supprimerTodo(todo.id)}
-              className="text-red-400 hover:text-red-600"
-            >
-              Supprimer
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {todos.length === 0 && (
-        <p className="text-center text-gray-400 mt-8">Aucune tâche pour le moment</p>
-      )}
+      <TodoForm onAjouter={handleAjouter} />
+      <TodoList
+        todos={todos}
+        onToggle={handleToggle}
+        onSupprimer={handleSupprimer}
+      />
     </main>
   )
 }
