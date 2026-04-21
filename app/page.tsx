@@ -4,9 +4,17 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import supabase from '@/lib/supabase'
 
+interface Todo {
+  id: string
+  user_id: string
+  titre: string
+  termine: boolean
+  created_at: string
+}
+
 export default function Home() {
   const router = useRouter()
-  const [todos, setTodos] = useState([])
+  const [todos, setTodos] = useState<Todo[]>([])
   const [titre, setTitre] = useState('')
   const [user, setUser] = useState<any>(null)
   const [error, setError] = useState('')
@@ -43,7 +51,7 @@ export default function Home() {
     fetchTodos()
   }
 
-  async function toggleTodo(id, termine) {
+  async function toggleTodo(id: string, termine: boolean) {
     const { error } = await supabase
       .from('todos')
       .update({ termine: !termine })
@@ -52,7 +60,7 @@ export default function Home() {
     fetchTodos()
   }
 
-  async function supprimerTodo(id) {
+  async function supprimerTodo(id: string) {
     const { error } = await supabase
       .from('todos')
       .delete()
@@ -105,7 +113,7 @@ export default function Home() {
 
       {/* Liste des todos */}
       <ul className="space-y-2">
-        {todos.map((todo) => (
+        {todos.map((todo: Todo) => (
           <li key={todo.id} className="flex items-center gap-3 p-3 border rounded">
             <input
               type="checkbox"
