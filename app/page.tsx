@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { getUser, deconnexion } from '@/lib/auth'
 import supabase from '@/lib/supabase'
 import { fetchTodos, ajouterTodo, toggleTodo, supprimerTodo } from '@/lib/todos'
 import { Todo } from '@/types'
+import Header from '@/components/Header'
 import TodoForm from '@/components/TodoForm'
 import TodoList from '@/components/TodoList'
 
@@ -15,7 +17,7 @@ export default function Home() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    getUser().then((user) => {
       if (!user) {
         router.push('/login')
       } else {
@@ -61,30 +63,21 @@ export default function Home() {
     }
   }
 
-  async function deconnexion() {
-    await supabase.auth.signOut()
+  async function handleDeconnexion() {
+    await deconnexion()
     router.push('/login')
   }
 
   return (
     <main className="max-w-xl mx-auto mt-16 p-4">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Ma liste de tâches</h1>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">{user?.email}</span>
-          <button
-            onClick={deconnexion}
-            className="text-sm text-red-400 hover:text-red-600"
-          >
-            Déconnexion
-          </button>
-        </div>
-      </div>
-
       {error && (
         <p className="text-red-500 text-sm mb-4">{error}</p>
       )}
 
+      <Header
+        email={user?.email || ''}
+        onDeconnexion={handleDeconnexion}
+      />
       <TodoForm onAjouter={handleAjouter} />
       <TodoList
         todos={todos}
